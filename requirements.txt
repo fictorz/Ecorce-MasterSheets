@@ -1,0 +1,57 @@
+# google-cloud-aiplatform
+# annotated-types
+# blinker
+# cachetools
+# certifi
+# charset-normalizer
+# click
+# Flask
+# google-ai-generativelanguage
+# google-api-core
+# google-api-python-client
+# google-auth
+# google-auth-httplib2
+# google-generativeai
+# googleapis-common-protos
+# grpcio
+# grpcio-status
+# httplib2
+# idna
+# itsdangerous
+# Jinja2
+# MarkupSafe
+# pillow
+# proto-plus
+# protobuf
+# pyasn1
+# pyasn1_modules
+# pydantic
+# pydantic_core
+# pyparsing
+# python-dotenv
+# requests
+# rsa
+# tqdm
+# typing_extensions
+# uritemplate
+# urllib3
+# Werkzeug
+
+# stripe
+# reportlab
+
+
+# requirements.txt (lean, pinned)
+Flask==2.3.2
+gunicorn==21.2.0
+python-dotenv==1.0.1
+stripe==7.11.0
+reportlab==4.2.5
+
+# Gemini (public API)
+google-genai==0.3.0
+
+# keep protobuf/grpc reasonable
+protobuf<6,>=4.25.3
+grpcio>=1.62.0,<2
+google-api-core>=2.17.0,<3

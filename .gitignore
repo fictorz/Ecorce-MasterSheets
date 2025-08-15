@@ -1,0 +1,6 @@
+venv
+__pycache__
+setup_api_key.sh
+api_key
+prompt_engineering_results/
+.env

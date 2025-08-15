@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dialogue Citoyen - Résolution de conflits au Québec</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            /* More professional font */
+            padding-top: 20px;
+            background-color: #f8f9fa;
+            /* Light gray background */
+        }
+
+        .jumbotron {
+            background-color: #ffffff;
+            /* White background for jumbotron */
+            padding: 2rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            /* Subtle shadow */
+        }
+
+        .jumbotron .row {
+            align-items: center;
+        }
+
+        .jumbotron h1 {
+            font-size: 2.5rem;
+            /* Larger heading */
+            font-weight: bold;
+            color: #343a40;
+            /* Dark gray heading */
+            margin-bottom: 0.5rem;
+        }
+
+        .jumbotron p.lead {
+            font-size: 1.25rem;
+            color: #495057;
+            /* Slightly darker gray for lead text */
+        }
+
+        .form-group label {
+            font-weight: bold;
+        }
+
+        .btn-primary {
+            background-color: #0056b3;
+            /* Darker blue for primary button */
+            border-color: #0056b3;
+            padding: 0.5rem 1.5rem;
+            /* Larger button */
+            font-size: 1.1rem;
+        }
+
+        .btn-primary:hover {
+            background-color: #003d82;
+            /* Even darker blue on hover */
+            border-color: #003d82;
+        }
+
+        #error-message {
+            margin-top: 1rem;
+            /* Space above error message */
+        }
+
+        /* Custom styles for a cleaner look */
+        .form-control {
+            border-radius: 0.25rem;
+            border: 1px solid #ced4da;
+        }
+
+        .img-fluid {
+            max-height: 250px;
+            /*Limit image size*/
+        }
+    </style>
+    <script src="https://js.stripe.com/v3/"></script>
+</head>
+
+<body>
+
+    <div class="container">
+        <div class="jumbotron">
+            <div class="row">
+                <div class="col-md-7">
+                    <h1 class="display-4">Bienvenue sur Dialogue Citoyen!</h1>
+                    <p class="lead">Votre plateforme pour résoudre les conflits au Québec.</p>
+                    <hr class="my-4">
+                    <p>Remplissez le formulaire ci-dessous pour commencer.</p>
+                </div>
+                <div class="col-md-5">
+                    <img src="/static/images/dialogue_citoyen.jpg" alt="Logo Dialogue Citoyen" class="img-fluid">
+                </div>
+            </div>
+        </div>
+
+        <form id="payment-form">
+
+            <div class="form-group">
+                <label for="legalName1">Nom légal de l'utilisateur #1:</label>
+                <input type="text" class="form-control" id="legalName1" name="legalName1" required
+                    placeholder="Nom légal complet de l'utilisateur #1">
+            </div>
+
+            <div class="form-group">
+                <label for="inputText1">Description du cas #1:</label> <textarea class="form-control" id="inputText1"
+                    name="inputText1" rows="3" required placeholder="Décrivez votre situation..."></textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="legalName2">Nom légal de l'utilisateur #2:</label>
+                <input type="text" class="form-control" id="legalName2" name="legalName2" required
+                    placeholder="Nom légal complet de l'utilisateur #2">
+            </div>
+
+            <div class="form-group">
+                <label for="inputText2">Description du cas #2:</label>
+                <textarea class="form-control" id="inputText2" name="inputText2" rows="3" required
+                    placeholder="Décrivez votre situation..."></textarea>
+            </div>
+            <div class="form-group form-check">
+                <input type="checkbox" class="form-check-input" id="agree-eula" required>
+                <label class="form-check-label" for="agree-eula">J'accepte les <a
+                        href="{{ url_for('static', filename='eula.html') }}" target="_blank">conditions d'utilisation
+                        (EULA)</a></label>
+            </div>
+            <button type="submit" class="btn btn-primary" id="checkout-button">Procéder au paiement</button>
+        </form>
+
+        <div id="error-message" class="alert alert-danger" style="display: none;"></div>
+    </div>
+
+    <script>
+        const stripe = Stripe('{{ stripe_pk }}'); // Replace with your PUBLISHABLE key
+
+        const form = document.getElementById('payment-form');
+        const errorMessageDiv = document.getElementById('error-message');
+
+        form.addEventListener('submit', async (event) => {
+            event.preventDefault();
+
+            // Disable the button to prevent multiple submissions
+            const submitButton = document.getElementById('checkout-button');
+            submitButton.disabled = true;
+            errorMessageDiv.style.display = 'none'; // Hide any previous errors
+
+            const inputText1 = document.getElementById('inputText1').value;
+            const inputText2 = document.getElementById('inputText2').value;
+            const legalName1 = document.getElementById('legalName1').value;
+            const legalName2 = document.getElementById('legalName2').value;
+            const agreeEula = document.getElementById('agree-eula').checked;
+
+
+            if (!agreeEula) {
+                errorMessageDiv.textContent = "Vous devez accepter les conditions d'utilisation pour continuer.";
+                errorMessageDiv.style.display = 'block';
+                submitButton.disabled = false;
+                return; // Stop the submission
+            }
+
+            try {
+                const response = await fetch('/create-checkout-session', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        inputText1: inputText1,
+                        inputText2: inputText2,
+                        legalName1: legalName1,
+                        legalName2: legalName2,
+                    }),
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(`Server error: ${response.status} - ${errorData.error}`);
+                }
+
+                const { id } = await response.json();
+
+                const { error } = await stripe.redirectToCheckout({
+                    sessionId: id,
+                });
+
+                if (error) {
+                    throw new Error("Stripe error: " + error.message);
+                }
+
+            } catch (error) {
+                console.error(error);
+                errorMessageDiv.textContent = error.message; // Show the error message
+                errorMessageDiv.style.display = 'block';
+                submitButton.disabled = false; // Re-enable the button
+            }
+        });
+    </script>
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
+</body>
+
+</html>
